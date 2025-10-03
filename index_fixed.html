@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>佛经粤语翻译系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .status-bar {
+            background: #17a2b8;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dc3545;
+        }
+
+        .status-indicator.connected {
+            background: #28a745;
+        }
+
+        .upload-section {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .upload-section.dragover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .translate-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .translate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .translate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .file-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #bbdefb;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .translation-results {
+            margin-top: 30px;
+        }
+
+        .translated-text {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #bbdefb;
+            font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #1565c0;
+            min-height: 50px;
+            position: relative;
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .audio-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .audio-btn:hover {
+            background: #ff5252;
+            transform: scale(1.05);
+        }
+
+        .status-message {
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🙏 佛经粤语翻译系统</h1>
+            <p>将佛经文言文翻译为纯正广州粤语大白话</p>
+        </div>
+
+        <div class="main-panel">
+            <div class="status-bar">
+                <div class="connection-status">
+                    <span class="status-indicator" id="connectionIndicator"></span>
+                    <span id="connectionStatus">连接中...</span>
+                </div>
+                <div id="userCount">在线用户: 1</div>
+            </div>
+
+            <div class="upload-section" id="uploadSection">
+                <h3>📁 上传佛经文档</h3>
+                <p>支持 .txt、.doc、.docx 格式</p>
+                <input type="file" id="fileInput" class="file-input" accept=".txt,.doc,.docx">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    选择文件
+                </button>
+                <p style="margin-top: 15px; color: #666;">或拖拽文件到此区域</p>
+            </div>
+
+            <div id="fileInfo" class="file-info" style="display: none;">
+                <h4>📋 文件信息</h4>
+                <p id="fileName"></p>
+                <p id="fileSize"></p>
+                <button class="translate-btn" id="translateBtn" onclick="startTranslation()">
+                    🚀 开始翻译
+                </button>
+            </div>
+
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div id="statusMessage"></div>
+
+            <div class="translation-results" id="translationResults"></div>
+        </div>
+    </div>
+
+    <script>
+        let websocket = null;
+        let currentFileId = null;
+        let clientId = null;
+
+        // 生成客户端ID
+        function generateClientId() {
+            return 'client_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        }
+
+        // 初始化WebSocket连接
+        function initializeWebSocket() {
+            clientId = generateClientId();
+            
+            // 智能构建WebSocket URL
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            const wsUrl = `${protocol}//${host}/ws/${clientId}`;
+            
+            console.log('尝试连接WebSocket:', wsUrl);
+            
+            try {
+                websocket = new WebSocket(wsUrl);
+                
+                websocket.onopen = function(event) {
+                    console.log('✅ WebSocket连接成功');
+                    updateConnectionStatus('已连接');
+                    showStatus('WebSocket连接成功！', 'success');
+                };
+                
+                websocket.onmessage = function(event) {
+                    const message = JSON.parse(event.data);
+                    handleWebSocketMessage(message);
+                };
+                
+                websocket.onclose = function(event) {
+                    console.log('❌ WebSocket连接断开', event.code, event.reason);
+                    updateConnectionStatus('已断开');
+                    showStatus('WebSocket连接断开，正在重连...', 'error');
+                    
+                    // 延迟重连
+                    setTimeout(initializeWebSocket, 5000);
+                };
+                
+                websocket.onerror = function(error) {
+                    console.error('❌ WebSocket错误:', error);
+                    console.log('当前URL:', wsUrl);
+                    updateConnectionStatus('连接错误');
+                    showStatus('WebSocket连接失败，请刷新页面重试', 'error');
+                };
+                
+            } catch (error) {
+                console.error('❌ WebSocket创建失败:', error);
+                updateConnectionStatus('创建失败');
+                showStatus('WebSocket初始化失败', 'error');
+            }
+        }
+
+        // 更新连接状态
+        function updateConnectionStatus(status) {
+            const indicator = document.getElementById('connectionIndicator');
+            const statusText = document.getElementById('connectionStatus');
+            
+            statusText.textContent = status;
+            
+            if (status === '已连接') {
+                indicator.classList.add('connected');
+            } else {
+                indicator.classList.remove('connected');
+            }
+        }
+
+        // 显示状态消息
+        function showStatus(message, type = 'info') {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.innerHTML = `<div class="status-message ${type}">${message}</div>`;
+            
+            // 3秒后清除成功消息
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusElement.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        // 处理WebSocket消息
+        function handleWebSocketMessage(message) {
+            switch(message.type) {
+                case 'translation_start':
+                    handleTranslationStart(message);
+                    break;
+                case 'translation_result':
+                    handleTranslationResult(message);
+                    break;
+                case 'translation_complete':
+                    handleTranslationComplete();
+                    break;
+                case 'audio_ready':
+                    handleAudioReady(message);
+                    break;
+                case 'error':
+                    showStatus(message.message, 'error');
+                    break;
+            }
+        }
+
+        // 处理翻译开始
+        function handleTranslationStart(message) {
+            showStatus(`开始翻译 ${message.filename}，共 ${message.total_paragraphs} 段`, 'success');
+            document.getElementById('progressBar').style.display = 'block';
+            document.getElementById('translationResults').innerHTML = '';
+        }
+
+        // 处理翻译结果
+        function handleTranslationResult(message) {
+            const resultsContainer = document.getElementById('translationResults');
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'translated-text';
+            resultDiv.innerHTML = `
+                <div style="color: #666; font-size: 0.9em; margin-bottom: 10px;">
+                    <strong>原文:</strong> ${message.original}
+                </div>
+                <div style="color: #1565c0; font-size: 1.1em;">
+                    <strong>粤语翻译:</strong> ${message.translated}
+                </div>
+                <div class="audio-controls" style="margin-top: 10px;">
+                    <button class="audio-btn" onclick="generateAudio('${message.translated}', ${message.paragraph_id})">
+                        🔊 粤语朗读
+                    </button>
+                </div>
+            `;
+            
+            resultsContainer.appendChild(resultDiv);
+            
+            // 更新进度
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = `${message.progress}%`;
+            
+            // 滚动到底部
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 处理翻译完成
+        function handleTranslationComplete() {
+            showStatus('翻译完成！🎉', 'success');
+            document.getElementById('translateBtn').disabled = false;
+        }
+
+        // 处理音频就绪
+        function handleAudioReady(message) {
+            // 播放音频
+            const audio = new Audio(`/audio/${message.audio_file}`);
+            audio.play().catch(e => console.log('音频播放失败:', e));
+        }
+
+        // 文件上传处理
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadFile(file);
+            }
+        }
+
+        // 拖拽上传
+        const uploadSection = document.getElementById('uploadSection');
+        
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+        
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+        
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        });
+
+        // 上传文件
+        async function uploadFile(file) {
+            try {
+                showStatus('正在上传文件...', 'info');
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`上传失败: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                currentFileId = result.file_id;
+                
+                // 显示文件信息
+                document.getElementById('fileName').textContent = `文件名: ${result.filename}`;
+                document.getElementById('fileSize').textContent = `文件大小: ${(result.size / 1024).toFixed(2)} KB | 文本长度: ${result.text_length} 字符`;
+                document.getElementById('fileInfo').style.display = 'block';
+                
+                showStatus('文件上传成功！', 'success');
+                
+            } catch (error) {
+                console.error('上传错误:', error);
+                showStatus(`上传失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 开始翻译
+        function startTranslation() {
+            if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+                showStatus('WebSocket未连接，请刷新页面重试', 'error');
+                return;
+            }
+            
+            if (!currentFileId) {
+                showStatus('请先上传文件', 'error');
+                return;
+            }
+            
+            document.getElementById('translateBtn').disabled = true;
+            
+            const message = {
+                type: 'translate_file',
+                file_id: currentFileId
+            };
+            
+            websocket.send(JSON.stringify(message));
+        }
+
+        // 生成音频
+        function generateAudio(text, paragraphId) {
+            if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+                showStatus('WebSocket未连接', 'error');
+                return;
+            }
+            
+            const message = {
+                type: 'generate_audio',
+                text: text,
+                paragraph_id: paragraphId
+            };
+            
+            websocket.send(JSON.stringify(message));
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 页面加载完成，初始化WebSocket连接');
+            initializeWebSocket();
+        });
+    </script>
+</body>
+</html>
